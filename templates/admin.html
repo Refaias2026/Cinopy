@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin - Cinopy</title>
+</head>
+<body>
+
+<h1>Painel Admin</h1>
+
+<h2>👥 Total de visitas: {{ visitas }}</h2>
+
+<h2>📝 Resenhas:</h2>
+
+<ul>
+    {% for r in reviews %}
+        <li>{{ r[0] }}</li>
+    {% endfor %}
+</ul>
+
+</body>
+</html>
