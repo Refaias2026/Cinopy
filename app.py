@@ -37,9 +37,11 @@ def init_db():
 
 init_db()
 
+from flask import make_response
+
 @app.route("/", methods=["GET", "POST"])
 def home():
-    # CONTADOR DE VISITAS (com proteção)
+    # CONTADOR DE VISITAS
     try:
         conn = get_connection()
         cur = conn.cursor()
@@ -68,15 +70,16 @@ def home():
     try:
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("SELECT texto FROM reviews")
+        cur.execute("SELECT texto FROM reviews ORDER BY id DESC")
         reviews = cur.fetchall()
         cur.close()
         conn.close()
     except:
         reviews = []
 
-    return render_template("index.html", reviews=reviews)
-
+    response = make_response(render_template("index.html", reviews=reviews))
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 @app.route("/admin")
 def admin():
