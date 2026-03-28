@@ -74,8 +74,10 @@ def home():
         reviews = cur.fetchall()
         cur.close()
         conn.close()
-    except:
-        reviews = []
+    except Exception as e:
+    print("ERRO AO BUSCAR REVIEWS:", e)
+    reviews = []
+
 
     response = make_response(render_template("index.html", reviews=reviews))
     response.headers["Cache-Control"] = "no-store"
