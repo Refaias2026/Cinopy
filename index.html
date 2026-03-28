@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <title>Cinopy</title>
+
+  <!-- 🔥 FORÇA NÃO USAR CACHE -->
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -61,21 +67,18 @@
       color: white;
       padding: 10px;
       border-radius: 5px;
-      text-decoration: none;
-      margin-top: 10px;
-      text-align: center;
-      cursor: pointer;
       border: none;
+      cursor: pointer;
     }
 
     .btn:hover {
       background: #cc0000;
     }
 
-    input, textarea {
+    textarea {
       width: 100%;
       padding: 8px;
-      margin-top: 5px;
+      margin-top: 10px;
       margin-bottom: 10px;
       border-radius: 5px;
       border: 1px solid #333;
@@ -91,6 +94,7 @@
     }
   </style>
 </head>
+
 <body>
 
 <header>
@@ -102,101 +106,35 @@
 
   <div class="card">
     <h2>🏆 Ranking da Galera</h2>
-    <div class="ranking-item">
-      <span>1. O Plano Perfeito</span>
-      <span>⭐ 9.2</span>
-    </div>
-    <div class="ranking-item">
-      <span>2. Estrada sem Lei</span>
-      <span>⭐ 8.8</span>
-    </div>
-    <div class="ranking-item">
-      <span>3. Superman 2025</span>
-      <span>⭐ 8.5</span>
-    </div>
-    <div class="ranking-item">
-      <span>4. O Agente Secreto</span>
-      <span>⭐ 8.3</span>
-    </div>
-    <div class="ranking-item">
-      <span>5. Uma Batalha Após a Outra</span>
-      <span>⭐ 8.0</span>
-    </div>
+    <div class="ranking-item"><span>1. O Plano Perfeito</span><span>⭐ 9.2</span></div>
+    <div class="ranking-item"><span>2. Estrada sem Lei</span><span>⭐ 8.8</span></div>
+    <div class="ranking-item"><span>3. Superman 2025</span><span>⭐ 8.5</span></div>
+    <div class="ranking-item"><span>4. O Agente Secreto</span><span>⭐ 8.3</span></div>
+    <div class="ranking-item"><span>5. Uma Batalha Após a Outra</span><span>⭐ 8.0</span></div>
   </div>
 
   <div class="card">
     <h2>👥 Indicações da Galera</h2>
-    <div id="lista-indicacoes"></div>
+
+    {% for review in reviews %}
+      <div class="nova-avaliacao">
+        <p>{{ review[0] }}</p>
+      </div>
+    {% endfor %}
+
   </div>
 
   <div class="card">
     <h2>⭐ Avaliar um Filme</h2>
-    <input type="text" id="filme" placeholder="Nome do filme">
-    <input type="number" id="nota" placeholder="Nota (0 a 10)">
-    <textarea id="comentario" placeholder="Sua opinião..."></textarea>
-    <button class="btn" onclick="enviarAvaliacao()">Enviar</button>
+
+    <form method="POST">
+      <textarea name="texto" placeholder="Escreva sua resenha..." required></textarea>
+      <button class="btn" type="submit">Enviar</button>
+    </form>
+
   </div>
 
 </div>
-
-<script>
-  function salvarNoLocalStorage(avaliacoes) {
-    localStorage.setItem("avaliacoes", JSON.stringify(avaliacoes));
-  }
-
-  function carregarDoLocalStorage() {
-    var dados = localStorage.getItem("avaliacoes");
-    return dados ? JSON.parse(dados) : [];
-  }
-
-  function mostrarAvaliacoes() {
-    var lista = document.getElementById("lista-indicacoes");
-    lista.innerHTML = "";
-
-    var avaliacoes = carregarDoLocalStorage();
-
-    avaliacoes.forEach(function(item) {
-      var novaDiv = document.createElement("div");
-      novaDiv.classList.add("nova-avaliacao");
-
-      novaDiv.innerHTML = "<p><strong>Filme:</strong> " + item.filme + "</p>" +
-                          "<p><strong>Nota:</strong> " + item.nota + "</p>" +
-                          "<p><strong>Comentário:</strong> " + item.comentario + "</p>";
-
-      lista.appendChild(novaDiv);
-    });
-  }
-
-  function enviarAvaliacao() {
-    var filme = document.getElementById("filme").value;
-    var nota = document.getElementById("nota").value;
-    var comentario = document.getElementById("comentario").value;
-
-    if (filme === "" || nota === "" || comentario === "") {
-      alert("Preencha todos os campos!");
-      return;
-    }
-
-    var avaliacoes = carregarDoLocalStorage();
-
-    avaliacoes.push({
-      filme: filme,
-      nota: nota,
-      comentario: comentario
-    });
-
-    salvarNoLocalStorage(avaliacoes);
-
-    mostrarAvaliacoes();
-
-    document.getElementById("filme").value = "";
-    document.getElementById("nota").value = "";
-    document.getElementById("comentario").value = "";
-  }
-
-  // Carregar ao abrir o site
-  mostrarAvaliacoes();
-</script>
 
 </body>
 </html>
