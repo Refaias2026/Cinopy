@@ -7,14 +7,25 @@ app = Flask(__name__)
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_connection():
-    return psycopg2.connect(DATABASE_URL)
+    try:
+        return psycopg2.connect(
+            DATABASE_URL,
+            sslmode="require",
+            connect_timeout=5
+        )
+    except Exception as e:
+        print("ERRO AO CONECTAR NO BANCO:", e)
+        return None
+
 
 def init_db():
+    conn = get_connection()
+    if not conn:
+        return
+
     try:
-        conn = get_connection()
         cur = conn.cursor()
 
-        # tabela de resenhas
         cur.execute("""
             CREATE TABLE IF NOT EXISTS reviews (
                 id SERIAL PRIMARY KEY,
@@ -22,7 +33,6 @@ def init_db():
             )
         """)
 
-        # tabela de visitas
         cur.execute("""
             CREATE TABLE IF NOT EXISTS visits (
                 id SERIAL PRIMARY KEY
@@ -35,48 +45,54 @@ def init_db():
     except Exception as e:
         print("ERRO AO CRIAR TABELAS:", e)
 
+
 init_db()
+
 
 @app.route("/", methods=["GET", "POST"])
 def home():
+
     # CONTADOR DE VISITAS
-    try:
-        conn = get_connection()
-        cur = conn.cursor()
-        cur.execute("INSERT INTO visits DEFAULT VALUES")
-        conn.commit()
-        cur.close()
-        conn.close()
-    except Exception as e:
-        print("ERRO AO CONTAR VISITAS:", e)
+    conn = get_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute("INSERT INTO visits DEFAULT VALUES")
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print("ERRO AO CONTAR VISITAS:", e)
 
     # NOVA RESENHA
     if request.method == "POST":
         texto = request.form.get("texto")
 
-        try:
-            conn = get_connection()
-            cur = conn.cursor()
-            cur.execute("INSERT INTO reviews (texto) VALUES (%s)", (texto,))
-            conn.commit()
-            cur.close()
-            conn.close()
-        except Exception as e:
-            print("ERRO AO SALVAR REVIEW:", e)
+        conn = get_connection()
+        if conn:
+            try:
+                cur = conn.cursor()
+                cur.execute("INSERT INTO reviews (texto) VALUES (%s)", (texto,))
+                conn.commit()
+                cur.close()
+                conn.close()
+            except Exception as e:
+                print("ERRO AO SALVAR REVIEW:", e)
 
         return redirect("/")
 
     # BUSCAR RESENHAS
-    try:
-        conn = get_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT texto FROM reviews ORDER BY id DESC")
-        reviews = cur.fetchall()
-        cur.close()
-        conn.close()
-    except Exception as e:
-        print("ERRO AO BUSCAR REVIEWS:", e)
-        reviews = []
+    reviews = []
+    conn = get_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT texto FROM reviews ORDER BY id DESC")
+            reviews = cur.fetchall()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print("ERRO AO BUSCAR REVIEWS:", e)
 
     response = make_response(render_template("index.html", reviews=reviews))
     response.headers["Cache-Control"] = "no-store"
@@ -85,22 +101,24 @@ def home():
 
 @app.route("/admin")
 def admin():
-    try:
-        conn = get_connection()
-        cur = conn.cursor()
+    visitas = 0
+    reviews = []
 
-        cur.execute("SELECT COUNT(*) FROM visits")
-        visitas = cur.fetchone()[0]
+    conn = get_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
 
-        cur.execute("SELECT texto FROM reviews ORDER BY id DESC")
-        reviews = cur.fetchall()
+            cur.execute("SELECT COUNT(*) FROM visits")
+            visitas = cur.fetchone()[0]
 
-        cur.close()
-        conn.close()
-    except Exception as e:
-        print("ERRO NO ADMIN:", e)
-        visitas = 0
-        reviews = []
+            cur.execute("SELECT texto FROM reviews ORDER BY id DESC")
+            reviews = cur.fetchall()
+
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print("ERRO NO ADMIN:", e)
 
     return render_template("admin.html", visitas=visitas, reviews=reviews)
 
