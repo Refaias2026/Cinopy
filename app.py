@@ -71,7 +71,7 @@ def home():
     # NOVA RESENHA
     if request.method == "POST":
         texto = request.form.get("texto")
-print("TEXTO RECEBIDO:", texto)
+        print("TEXTO RECEBIDO:", texto)
 
         conn = get_connection()
         if conn:
