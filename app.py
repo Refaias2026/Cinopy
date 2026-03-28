@@ -32,12 +32,10 @@ def init_db():
         conn.commit()
         cur.close()
         conn.close()
-    except:
-        pass
+    except Exception as e:
+        print("ERRO AO CRIAR TABELAS:", e)
 
 init_db()
-
-from flask import make_response
 
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -49,9 +47,10 @@ def home():
         conn.commit()
         cur.close()
         conn.close()
-    except:
-        pass
+    except Exception as e:
+        print("ERRO AO CONTAR VISITAS:", e)
 
+    # NOVA RESENHA
     if request.method == "POST":
         texto = request.form.get("texto")
 
@@ -62,11 +61,12 @@ def home():
             conn.commit()
             cur.close()
             conn.close()
-        except:
-            pass
+        except Exception as e:
+            print("ERRO AO SALVAR REVIEW:", e)
 
         return redirect("/")
 
+    # BUSCAR RESENHAS
     try:
         conn = get_connection()
         cur = conn.cursor()
@@ -75,13 +75,13 @@ def home():
         cur.close()
         conn.close()
     except Exception as e:
-    print("ERRO AO BUSCAR REVIEWS:", e)
-    reviews = []
-
+        print("ERRO AO BUSCAR REVIEWS:", e)
+        reviews = []
 
     response = make_response(render_template("index.html", reviews=reviews))
     response.headers["Cache-Control"] = "no-store"
     return response
+
 
 @app.route("/admin")
 def admin():
@@ -92,32 +92,39 @@ def admin():
         cur.execute("SELECT COUNT(*) FROM visits")
         visitas = cur.fetchone()[0]
 
-        cur.execute("SELECT texto FROM reviews")
+        cur.execute("SELECT texto FROM reviews ORDER BY id DESC")
         reviews = cur.fetchall()
 
         cur.close()
         conn.close()
-    except:
+    except Exception as e:
+        print("ERRO NO ADMIN:", e)
         visitas = 0
         reviews = []
 
     return render_template("admin.html", visitas=visitas, reviews=reviews)
 
+
 @app.route("/privacidade")
 def privacidade():
     return render_template("privacidade.html")
+
 
 @app.route("/termos")
 def termos():
     return render_template("termos.html")
 
+
 @app.route("/contato")
 def contato():
     return render_template("contato.html")
 
+
 @app.route("/sobre")
 def sobre():
     return render_template("sobre.html")
+
+
 @app.after_request
 def add_header(response):
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
@@ -125,6 +132,6 @@ def add_header(response):
     response.headers["Expires"] = "0"
     return response
 
+
 if __name__ == "__main__":
     app.run()
-    
