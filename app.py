@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, make_response
+from flask import Flask, render_template, request, redirect
 import psycopg2
 import os
 
@@ -44,4 +44,83 @@ def init_db():
 
         conn.commit()
         cur.close()
-       
+        conn.close()
+
+    except Exception as e:
+        print("ERRO AO CRIAR TABELAS:", e)
+
+
+init_db()
+
+
+@app.route("/", methods=["GET", "POST"])
+def home():
+
+    # CONTADOR DE VISITAS
+    conn = get_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute("INSERT INTO visits DEFAULT VALUES")
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print("ERRO AO CONTAR VISITAS:", e)
+
+    # NOVA RESENHA
+    if request.method == "POST":
+        texto = request.form.get("texto")
+
+        print("TEXTO RECEBIDO:", texto)
+
+        if texto:
+            conn = get_connection()
+            if conn:
+                try:
+                    cur = conn.cursor()
+                    cur.execute("INSERT INTO reviews (texto) VALUES (%s)", (texto,))
+                    conn.commit()
+                    cur.close()
+                    conn.close()
+                except Exception as e:
+                    print("ERRO AO SALVAR REVIEW:", e)
+
+        return redirect("/")
+
+    # BUSCAR RESENHAS
+    reviews = []
+    conn = get_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT texto FROM reviews ORDER BY id DESC")
+            reviews = cur.fetchall()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print("ERRO AO BUSCAR REVIEWS:", e)
+
+    return render_template("index.html", reviews=reviews)
+
+
+@app.route("/admin")
+def admin():
+    conn = get_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT texto FROM reviews ORDER BY id DESC")
+            reviews = cur.fetchall()
+            cur.close()
+            conn.close()
+
+            return "<br>".join([r[0] for r in reviews]) or "SEM RESENHAS"
+        except Exception as e:
+            print("ERRO NO ADMIN:", e)
+
+    return "ERRO AO CARREGAR"
+
+
+if __name__ == "__main__":
+    app.run()
