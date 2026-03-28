@@ -6,6 +6,10 @@ app = Flask(__name__)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+# 🔥 MOSTRA QUAL BANCO ESTÁ SENDO USADO
+print("BANCO USADO:", DATABASE_URL)
+
+
 def get_connection():
     try:
         return psycopg2.connect(
