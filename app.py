@@ -125,7 +125,7 @@ def home():
         except Exception as e:
             print("ERRO AO BUSCAR REVIEWS:", e)
 
-    return render_template("index.html", reviews=reviews)
+    return f"REVIEWS DO BANCO: {reviews}"
 
 
 # ===== ADMIN =====
