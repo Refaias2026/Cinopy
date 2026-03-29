@@ -4,9 +4,14 @@ import os
 
 app = Flask(__name__)
 
+# ===== CONFIG BANCO =====
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-print("BANCO USADO:", DATABASE_URL)
+# Corrige problema comum do Render
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+print("BANCO USADO:", DATABASE_URL[:50] if DATABASE_URL else "NENHUM")
 
 
 def get_connection():
@@ -21,6 +26,7 @@ def get_connection():
         return None
 
 
+# ===== CRIAR TABELAS =====
 def init_db():
     conn = get_connection()
     if conn is None:
@@ -53,6 +59,14 @@ def init_db():
 init_db()
 
 
+# ===== REMOVER CACHE (IMPORTANTE) =====
+@app.after_request
+def add_header(response):
+    response.cache_control.no_store = True
+    return response
+
+
+# ===== ROTA PRINCIPAL =====
 @app.route("/", methods=["GET", "POST"])
 def home():
 
@@ -79,7 +93,10 @@ def home():
             if conn:
                 try:
                     cur = conn.cursor()
-                    cur.execute("INSERT INTO reviews (texto) VALUES (%s)", (texto,))
+                    cur.execute(
+                        "INSERT INTO reviews (texto) VALUES (%s)",
+                        (texto,)
+                    )
                     conn.commit()
                     cur.close()
                     conn.close()
@@ -95,7 +112,10 @@ def home():
         try:
             cur = conn.cursor()
             cur.execute("SELECT texto FROM reviews ORDER BY id DESC")
-            reviews = cur.fetchall()
+            
+            # Corrige formato
+            reviews = [r[0] for r in cur.fetchall()]
+
             cur.close()
             conn.close()
         except Exception as e:
@@ -104,6 +124,7 @@ def home():
     return render_template("index.html", reviews=reviews)
 
 
+# ===== ADMIN (DEBUG) =====
 @app.route("/admin")
 def admin():
     conn = get_connection()
@@ -111,16 +132,17 @@ def admin():
         try:
             cur = conn.cursor()
             cur.execute("SELECT texto FROM reviews ORDER BY id DESC")
-            reviews = cur.fetchall()
+            reviews = [r[0] for r in cur.fetchall()]
             cur.close()
             conn.close()
 
-            return "<br>".join([r[0] for r in reviews]) or "SEM RESENHAS"
+            return "<br>".join(reviews) or "SEM RESENHAS"
         except Exception as e:
             print("ERRO NO ADMIN:", e)
 
     return "ERRO AO CARREGAR"
 
 
+# ===== RODAR LOCAL =====
 if __name__ == "__main__":
     app.run()
