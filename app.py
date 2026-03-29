@@ -4,6 +4,13 @@ import os
 
 app = Flask(__name__)
 
+# ===== REDIRECIONAR DOMÍNIO (AQUI É O LUGAR CERTO) =====
+@app.before_request
+def force_domain():
+    if "cinopy.onrender.com" in request.host:
+        return redirect("https://cinopy.com.br" + request.full_path, code=301)
+
+
 # ===== CONFIG BANCO =====
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -59,7 +66,7 @@ def init_db():
 init_db()
 
 
-# ===== REMOVER CACHE (IMPORTANTE) =====
+# ===== REMOVER CACHE =====
 @app.after_request
 def add_header(response):
     response.cache_control.no_store = True
@@ -86,8 +93,6 @@ def home():
     if request.method == "POST":
         texto = request.form.get("texto")
 
-        print("TEXTO RECEBIDO:", texto)
-
         if texto:
             conn = get_connection()
             if conn:
@@ -112,10 +117,7 @@ def home():
         try:
             cur = conn.cursor()
             cur.execute("SELECT texto FROM reviews ORDER BY id DESC")
-            
-            # Corrige formato
             reviews = [r[0] for r in cur.fetchall()]
-
             cur.close()
             conn.close()
         except Exception as e:
@@ -124,7 +126,7 @@ def home():
     return render_template("index.html", reviews=reviews)
 
 
-# ===== ADMIN (DEBUG) =====
+# ===== ADMIN =====
 @app.route("/admin")
 def admin():
     conn = get_connection()
